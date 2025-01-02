@@ -76,13 +76,12 @@ router.post(
   ) => {
     try {
       const transactionData: TransactionCreate = req.body;
+      const currentUserId = req.body.userId; // Obtener el userId del body
 
       if (!transactionData) {
         return res
           .status(400)
-          .json({ error: "El cuerpo de la petición está vacío" } as {
-            error: string;
-          });
+          .json({ error: "El cuerpo de la petición está vacío" }) as any;
       }
 
       const requiredFields = [
@@ -92,13 +91,12 @@ router.post(
         "type",
         "userId",
       ];
+
       for (const field of requiredFields) {
         if (!transactionData[field as keyof TransactionCreate]) {
           return res
             .status(400)
-            .json({ error: `El campo ${field} es obligatorio` } as {
-              error: string;
-            });
+            .json({ error: `El campo ${field} es obligatorio` });
         }
       }
 
@@ -108,13 +106,13 @@ router.post(
       ) {
         return res.status(400).json({
           error: "La descripción debe ser una cadena de texto no vacía",
-        } as { error: string }) as any;
+        });
       }
 
       if (isNaN(new Date(transactionData.date).getTime())) {
         return res.status(400).json({
           error: "La fecha no es válida. Use formato ISO 8601 (YYYY-MM-DD)",
-        } as { error: string });
+        });
       }
 
       if (
@@ -123,9 +121,7 @@ router.post(
       ) {
         return res
           .status(400)
-          .json({ error: "El monto debe ser un número mayor que cero" } as {
-            error: string;
-          });
+          .json({ error: "El monto debe ser un número mayor que cero" });
       }
 
       const allowedTypes = ["income", "expense"];
@@ -134,7 +130,7 @@ router.post(
           error: `El tipo debe ser uno de los siguientes: ${allowedTypes.join(
             ", "
           )}`,
-        } as { error: string });
+        });
       }
 
       if (
@@ -143,18 +139,20 @@ router.post(
       ) {
         return res.status(400).json({
           error: "El userId debe ser una cadena de texto no vacía",
-        } as { error: string });
+        });
       }
 
       const db = await openDb();
       const result = await db.run(
-        "INSERT INTO transactions (description, date, amount, type, userId) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO transactions (description, date, amount, type, userId, categoryId, paymentMethodId) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [
           transactionData.description,
           transactionData.date,
           transactionData.amount,
           transactionData.type,
           transactionData.userId,
+          transactionData.categoryId,
+          transactionData.paymentMethodId,
         ]
       );
 
@@ -169,16 +167,23 @@ router.post(
         console.error(
           "Error al insertar la transacción en la base de datos:",
           result
-        ); // Log detallado del error
+        );
         return res.status(500).json({
           error: "Error al crear la transacción en la base de datos",
-        } as { error: string });
+        });
       }
     } catch (error) {
-      console.error("Error en el endpoint POST /transactions:", error);
-      return res
-        .status(500)
-        .json({ error: "Error al crear la transacción" } as { error: string });
+      if (error instanceof Error) {
+        console.error(
+          "Error en el endpoint POST /transactions:",
+          error.message
+        );
+        console.error(error.stack);
+      }
+      return res.status(500).json({
+        error:
+          "Error interno del servidor. Consulte los logs para más detalles.",
+      });
     }
   }
 );

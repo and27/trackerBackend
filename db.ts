@@ -89,11 +89,25 @@ async function openDb() {
     await db.exec(`
       CREATE TABLE IF NOT EXISTS paymentMethods (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        userId TEXT NOT NULL,
-        FOREIGN KEY (userId) REFERENCES users(id)
+        name TEXT NOT NULL
       )
     `);
+
+    const defaultPaymentMethods = [
+      { name: "cash" },
+      { name: "card" },
+      { name: "bank transfer" },
+      { name: "paypal" },
+      { name: "credit" },
+      { name: "wallet" },
+      { name: "other" },
+    ];
+
+    for (const method of defaultPaymentMethods) {
+      await db.run("INSERT OR IGNORE INTO paymentMethods (name) VALUES (?)", [
+        method.name,
+      ]);
+    }
 
     console.log("Base de datos abierta y tablas creadas (si no existían).");
     return db;
