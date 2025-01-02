@@ -21,7 +21,7 @@ router.get(
       const db = await openDb();
       const userId = req.query.userId;
       const categories: Category[] = await db.all(
-        "SELECT * FROM categories WHERE userId = ?",
+        "SELECT * FROM categories WHERE userId = ? OR userId = 'system';",
         [userId]
       );
       res.json(categories);
