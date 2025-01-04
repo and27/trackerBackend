@@ -26,7 +26,16 @@ router.get(
     try {
       const db = await openDb();
       const userId = req.query.userId;
-      let query = "SELECT * FROM transactions WHERE userId = ?";
+      let query = `
+      SELECT 
+        transactions.*, 
+        categories.name as categoryName, 
+        paymentMethods.name as paymentMethodName 
+      FROM transactions 
+      LEFT JOIN categories ON transactions.categoryId = categories.id 
+      LEFT JOIN paymentMethods ON transactions.paymentMethodId = paymentMethods.id 
+      WHERE transactions.userId = ?
+    `;
       const params = [userId];
 
       if (req.query._sort && req.query._order) {
