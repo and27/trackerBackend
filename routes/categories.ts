@@ -59,4 +59,31 @@ router.post(
   }
 );
 
+//delete by name
+router.delete(
+  "/",
+  async (
+    req: Request<{}, any, any, { userId: string; name: string }>,
+    res: Response
+  ) => {
+    const userId = req.query.userId;
+    const name = req.query.name;
+    try {
+      const db = await openDb();
+      const result = await db.run(
+        "DELETE FROM categories WHERE name = ? and userId = ?",
+        [name, userId]
+      );
+      if (result.changes > 0) {
+        res.json({ name: req.query.name });
+      } else {
+        res.status(404).json({ error: "Categoría no encontrada" });
+      }
+    } catch (error) {
+      console.error("Error al eliminar la categoría:", error);
+      res.status(500).json({ error: "Error al eliminar la categoría" });
+    }
+  }
+);
+
 export default router;
